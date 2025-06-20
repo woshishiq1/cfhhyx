@@ -1,0 +1,38 @@
+name: 每5分钟自动更新BestCFv6
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # 每5分钟运行
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 下载并格式化 IPv6 列表
+        run: |
+          curl -s https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt > raw.txt
+          cat raw.txt | grep ':' | awk '{print "["$0"]:443"}' > bestcfv6.txt
+
+      - name: 提交变更
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bestcfv6.txt
+          git commit -m "自动更新 bestcfv6.txt ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
+          git push
+
+  cleanup_runs:
+    runs-on: ubuntu-latest
+    needs: update  # 等待 update job 完成
+    steps:
+      - name: 删除旧 workflow 记录，仅保留最近10次
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          retain_days: 0
+          keep_minimum_runs: 10
