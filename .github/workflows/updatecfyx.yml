@@ -1,9 +1,9 @@
-name: 每5分钟更新IP列表
+name: 每5分钟更新IP地址列表
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # 每5分钟运行一次
-  workflow_dispatch:
+    - cron: '*/5 * * * *'  # 每5分钟运行
+  workflow_dispatch:       # 支持手动触发
 
 jobs:
   update:
@@ -13,58 +13,69 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
 
-      - name: 抓取并格式化 IPv4 + IPv6 地址
+      - name: 抓取并格式化 IP / 域名
         run: |
-          # 清空临时数据
+          set -e
+          echo "🧹 清空缓存..."
           > all_raw.txt
 
-          # 文本源地址列表
-          for url in \
-            "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt" \
-            "https://ipdb.api.030101.xyz/?type=bestcf&country=true" \
-            "https://addressesapi.090227.xyz/CloudFlareYes" \
-            "https://addressesapi.090227.xyz/ip.164746.xyz" \
-            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt" \
-            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt" \
+          urls=(
+            "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
+            "https://ipdb.api.030101.xyz/?type=bestcf&country=true"
+            "https://addressesapi.090227.xyz/CloudFlareYes"
+            "https://addressesapi.090227.xyz/ip.164746.xyz"
+            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt"
+            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt"
             "https://addressesapi.090227.xyz/cmcc-ipv6"
-          do
-            echo "Fetching $url"
-            curl -s "$url" >> all_raw.txt || echo "# Failed: $url" >> all_raw.txt
+            "https://ip.164746.xyz/ipTop10.html"
+          )
+
+          for url in "${urls[@]}"; do
+            echo "🌐 抓取：$url"
+            if curl -fs "$url" -o temp.txt; then
+              cat temp.txt >> all_raw.txt
+            else
+              echo "⚠️ 获取失败: $url"
+            fi
           done
 
-          # 处理 HTML 页面 ipTop10.html
-          curl -s https://ip.164746.xyz/ipTop10.html > iptop.html
-          grep -oE '([0-9a-fA-F]{0,4}:){2,}[0-9a-fA-F]{0,4}' iptop.html >> all_raw.txt
-          grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}' iptop.html >> all_raw.txt
+          # 提取 IPv6（非常宽松）
+          grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}' all_raw.txt | grep -v '^$' | sort -u > ipv6_raw.txt
 
-          # 清洗并分类
-          grep -v '^#' all_raw.txt | grep -v '^$' | sort | uniq > cleaned.txt
+          # 提取 IPv4
+          grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' all_raw.txt | sort -u > ipv4.txt
 
-          # IPv6 加 []
-          grep ':' cleaned.txt | grep -v '\[' | awk '{print "["$0"]:443"}' > ipv6.txt
+          # 提取域名（简单方式）
+          grep -oE '\b([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b' all_raw.txt \
+            | grep -vE '^[0-9.]+$' | sort -u > domains.txt
 
-          # IPv4 + 域名（保留原样）
-          grep -v ':' cleaned.txt > ipv4_or_domains.txt
+          # 格式化 IPv6
+          awk '{print "[" $0 "]:443"}' ipv6_raw.txt > ipv6.txt
 
-          # 合并 + 去重
-          cat ipv4_or_domains.txt ipv6.txt | sort | uniq > bestcfv6.txt
+          # 合并所有
+          cat ipv4.txt domains.txt ipv6.txt | sort -u > bestcfv6.txt
 
-      - name: 提交变更到仓库
+          # 清理
+          rm -f temp.txt ipv6_raw.txt ipv4.txt domains.txt ipv6.txt
+
+          echo "✅ 共生成 $(wc -l < bestcfv6.txt) 条地址"
+
+      - name: 提交变更
         env:
-          TOKEN: ${{ secrets.PAT_TOKEN }}  # ⚠️ 需要你设置 Personal Access Token
+          TOKEN: ${{ secrets.PAT_TOKEN }}  # ⛔ 你必须设置这个 secret
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
           git add bestcfv6.txt
-          git commit -m "更新 bestcfv6.txt ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
+          git commit -m "自动更新 bestcfv6.txt ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
           git push
 
   cleanup_runs:
     runs-on: ubuntu-latest
     needs: update
     steps:
-      - name: 清理旧 Workflow，仅保留最近10次
+      - name: 清理旧工作记录，保留最近10次
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
