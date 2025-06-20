@@ -54,7 +54,7 @@ jobs:
             fi
 
             ip=$(echo "$line" | sed 's/^\[//;s/\]$//')
-            if [[ "$ip" =~ ^([0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}$ ]]; then
+            if [[ "$ip" =~ ^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$ || "$ip" =~ :: ]]; then
               echo "[$ip]:443" >> bestcfv6.txt
             else
               echo "$line" >> bestcfv6.txt
