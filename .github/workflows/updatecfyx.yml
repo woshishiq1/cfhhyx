@@ -26,6 +26,8 @@ jobs:
             "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt"
             "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt"
             "https://addressesapi.090227.xyz/cmcc-ipv6"
+            "https://addressesapi.090227.xyz/cmcc"
+            "https://addressesapi.090227.xyz/ct"
           )
 
           for url in "${urls[@]}"; do
