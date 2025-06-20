@@ -21,7 +21,6 @@ jobs:
 
           urls=(
             "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
-            "https://ipdb.api.030101.xyz/?type=bestcf&country=true"
             "https://addressesapi.090227.xyz/CloudFlareYes"
             "https://addressesapi.090227.xyz/ip.164746.xyz"
             "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt"
