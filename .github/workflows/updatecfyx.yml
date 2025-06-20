@@ -3,7 +3,7 @@ name: 每5分钟更新IP地址列表
 on:
   schedule:
     - cron: '*/5 * * * *'  # 每5分钟运行（UTC时间）
-  workflow_dispatch:       # 支持手动触发
+  workflow_dispatch:
 
 jobs:
   update:
@@ -18,6 +18,9 @@ jobs:
           set -e
           echo "🧹 初始化缓存..."
           > all_raw.txt
+          > ipv4_final.txt
+          > domains_final.txt
+          > ipv6_final.txt
 
           urls=(
             "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
@@ -38,43 +41,54 @@ jobs:
             fi
           done
 
-          echo "🔍 正在提取 IPv4 地址..."
-          grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' all_raw.txt > ipv4_final.txt
+          echo "🔍 按原始顺序解析分类..."
+          while IFS= read -r line; do
+            # 去除注释和首尾空白
+            content=$(echo "$line" | sed 's/#.*//' | xargs)
+            if [[ -z "$content" ]]; then
+              continue
+            fi
 
-          echo "🔍 正在提取域名..."
-          grep -oE '\b([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b' all_raw.txt \
-            | grep -vE '^[0-9.]+$' > domains_final.txt
+            # 判断 IPv4
+            if echo "$content" | grep -Eq '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+              echo "$content" >> ipv4_final.txt
+              continue
+            fi
 
-          echo "🔍 正在提取并格式化 IPv6 地址..."
-          grep -oE '(\[)?([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}(\])?' all_raw.txt \
-            | sed 's/#.*//' \
-            | sed 's/\[//g; s/\]//g' \
-            | awk 'NF' \
-            | awk '{print "[" $0 "]:443"}' > ipv6_final.txt
+            # 判断 IPv6
+            ip6=$(echo "$content" | sed 's/\[//g; s/\]//g')
+            if echo "$ip6" | grep -Eq '^([0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}$'; then
+              echo "$ip6" >> ipv6_final.txt
+              continue
+            fi
 
-          echo "🧩 合并并添加注释标题..."
+            # 判断域名（简单判断）
+            if echo "$content" | grep -Eq '^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$'; then
+              echo "$content" >> domains_final.txt
+              continue
+            fi
+          done < all_raw.txt
+
+          echo "🧩 合并并添加注释标题，保持顺序去重..."
           {
             echo "# ===== IPv4 地址 ====="
-            cat ipv4_final.txt
+            awk '!seen[$0]++' ipv4_final.txt
             echo
             echo "# ===== 域名 ====="
-            cat domains_final.txt
+            awk '!seen[$0]++' domains_final.txt
             echo
             echo "# ===== IPv6 地址 ====="
-            cat ipv6_final.txt
-          } > merged_with_header.txt
-
-          echo "🚿 保序去重生成 bestcfv6.txt..."
-          awk '!seen[$0]++' merged_with_header.txt > bestcfv6.txt
+            awk '!seen[$0]++' ipv6_final.txt | awk '{print "[" $0 "]:443"}'
+          } > bestcfv6.txt
 
           echo "🧹 清理临时文件..."
-          rm -f ipv4_final.txt domains_final.txt ipv6_final.txt merged_with_header.txt
+          rm -f ipv4_final.txt domains_final.txt ipv6_final.txt
 
           echo "✅ 共生成 $(wc -l < bestcfv6.txt) 条记录"
 
       - name: 提交变更
         env:
-          TOKEN: ${{ secrets.PAT_TOKEN }}  # 在仓库 Secrets 中添加此 Token
+          TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
