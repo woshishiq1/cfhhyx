@@ -16,7 +16,7 @@ jobs:
       - name: 抓取并格式化 IP / 域名
         run: |
           set -e
-          echo "🧹 清空缓存..."
+          echo "🧹 初始化缓存..."
           > all_raw.txt
 
           urls=(
@@ -30,42 +30,42 @@ jobs:
 
           for url in "${urls[@]}"; do
             echo "🌐 抓取：$url"
-            if curl -fs "$url" -o temp.txt; then
-              cat temp.txt >> all_raw.txt
+            echo "# 来源: $url" >> all_raw.txt
+            if curl -fs "$url" >> all_raw.txt; then
+              echo -e "\n" >> all_raw.txt
             else
               echo "⚠️ 获取失败: $url"
             fi
           done
 
-          # 提取 IPv6（非常宽松）
-          grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}' all_raw.txt | grep -v '^$' | sort -u > ipv6_raw.txt
+          # 提取 IPv6（宽松格式）
+          grep -oE '([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}' all_raw.txt | grep -v '^$' > ipv6_raw.txt
 
           # 提取 IPv4
-          grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' all_raw.txt | sort -u > ipv4.txt
+          grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' all_raw.txt > ipv4.txt
 
-          # 提取域名（简单方式）
-          grep -oE '\b([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b' all_raw.txt \
-            | grep -vE '^[0-9.]+$' | sort -u > domains.txt
+          # 提取域名（排除纯IP）
+          grep -oE '\b([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b' all_raw.txt | grep -vE '^[0-9.]+$' > domains.txt
 
-          # 格式化 IPv6
+          # 格式化 IPv6 为 [IPv6]:443
           awk '{print "[" $0 "]:443"}' ipv6_raw.txt > ipv6.txt
 
-          # 合并所有
-          cat ipv4.txt domains.txt ipv6.txt | sort -u > bestcfv6.txt
+          # 合并并保序去重写入最终文件
+          cat ipv4.txt domains.txt ipv6.txt | awk '!seen[$0]++' > bestcfv6.txt
 
-          # 清理
+          # 清理中间文件
           rm -f temp.txt ipv6_raw.txt ipv4.txt domains.txt ipv6.txt
 
           echo "✅ 共生成 $(wc -l < bestcfv6.txt) 条地址"
 
       - name: 提交变更
         env:
-          TOKEN: ${{ secrets.PAT_TOKEN }}  # ⛔ 你必须设置这个 secret
+          TOKEN: ${{ secrets.PAT_TOKEN }}  # 在仓库 Secrets 中添加 PAT_TOKEN
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
-          git add bestcfv6.txt
+          git add bestcfv6.txt all_raw.txt
           git commit -m "自动更新 bestcfv6.txt ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
           git push
 
