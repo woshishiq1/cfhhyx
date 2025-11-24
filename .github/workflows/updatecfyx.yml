@@ -2,7 +2,7 @@ name: 每5分钟更新IP地址列表
 
 on:
   schedule:
-    - cron: '*/5 * * * *'  # 每5分钟运行（UTC时间）
+    - cron: '*/15 * * * *'  # 每5分钟运行（UTC时间）
   workflow_dispatch:       # 支持手动触发
 
 jobs:
