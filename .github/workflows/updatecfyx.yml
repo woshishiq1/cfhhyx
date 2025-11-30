@@ -21,10 +21,11 @@ jobs:
 
           urls=(
             "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
-            "https://addressesapi.090227.xyz/CloudFlareYes"
-            "https://addressesapi.090227.xyz/ip.164746.xyz"
+            "https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt"
+           // "https://addressesapi.090227.xyz/CloudFlareYes"
+           // "https://addressesapi.090227.xyz/ip.164746.xyz"
             "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt"
-            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt"
+           // "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt"
             "https://addressesapi.090227.xyz/cmcc-ipv6"
           )
 
