@@ -13,11 +13,11 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
 
-      - name: 抓取并处理 IP / 域名（IPv4 / IPv6 自动端口）
+      - name: 抓取并处理 IP / 域名（IPv4 / IPv6 / 域名自动识别）
         run: |
           set -e
 
-          echo "🧹 初始化缓存..."
+          echo "初始化缓存..."
           > all_raw.txt
 
           urls=(
@@ -31,67 +31,76 @@ jobs:
           )
 
           for url in "${urls[@]}"; do
-            echo "🌐 抓取：$url"
+            echo "抓取：$url"
             echo "# 来源: $url" >> all_raw.txt
             if curl -fs "$url" >> all_raw.txt; then
-              echo -e "\n" >> all_raw.txt
+              echo >> all_raw.txt
             else
-              echo "⚠️ 获取失败: $url"
+              echo "获取失败: $url"
             fi
           done
 
-          echo "🔄 处理地址：检测 IPv4 / IPv6 端口，无端口补 443..."
-
+          echo "处理地址规则..."
           declare -A seen
           > bestcfv6.txt
 
           while IFS= read -r line; do
-            # 去注释、去行尾空白
             line=$(echo "$line" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
             [[ -z "$line" ]] && continue
 
-            # 去重（完整字符串）
             if [[ ${seen["$line"]+exists} ]]; then
               continue
             fi
             seen["$line"]=1
 
-            # ===== IPv6：[xxxx]:port =====
+            # ===== 1️⃣ 域名 + 端口 =====
+            if [[ "$line" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[0-9]+$ ]]; then
+              echo "$line" >> bestcfv6.txt
+              continue
+            fi
+
+            # ===== 2️⃣ 域名（无端口）=====
+            if [[ "$line" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+              echo "$line" >> bestcfv6.txt
+              continue
+            fi
+
+            # ===== 3️⃣ IPv6：[xxxx]:port =====
             if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]:[0-9]+$ ]]; then
               echo "$line" >> bestcfv6.txt
               continue
             fi
 
-            # ===== IPv6：[xxxx]（无端口）=====
+            # ===== 4️⃣ IPv6：[xxxx]（无端口）=====
             if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
               echo "$line:443" >> bestcfv6.txt
               continue
             fi
 
-            # ===== IPv4：x.x.x.x:port =====
+            # ===== 5️⃣ IPv4：x.x.x.x:port =====
             if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
               echo "$line" >> bestcfv6.txt
               continue
             fi
 
-            # ===== IPv4：x.x.x.x（无端口）=====
+            # ===== 6️⃣ IPv4：x.x.x.x（无端口）=====
             if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
               echo "$line:443" >> bestcfv6.txt
               continue
             fi
 
-            # ===== IPv6：裸地址（无 []，视为无端口）=====
+            # ===== 7️⃣ IPv6 裸地址（无 []）=====
             if [[ "$line" =~ : ]]; then
               echo "[$line]:443" >> bestcfv6.txt
               continue
             fi
 
-            # ===== 其他（域名等，原样保留）=====
+            # ===== 8️⃣ 兜底 =====
             echo "$line" >> bestcfv6.txt
 
           done < all_raw.txt
 
-          echo "✅ 共生成 $(wc -l < bestcfv6.txt) 条记录"
+          echo "生成完成：$(wc -l < bestcfv6.txt) 条"
 
       - name: 提交变更
         env:
