@@ -1,9 +1,9 @@
-name: 每5分钟更新IP地址列表
+name: 每3小时更新 IP 地址列表
 
 on:
   schedule:
-    - cron: '0 */3 * * *'  # 每3小时运行（UTC时间）
-  workflow_dispatch:       # 支持手动触发
+    - cron: '0 */3 * * *'   # 每 3 小时（UTC）
+  workflow_dispatch:
 
 jobs:
   update:
@@ -13,19 +13,20 @@ jobs:
       - name: 检出仓库
         uses: actions/checkout@v4
 
-      - name: 抓取并格式化 IP / 域名（保持原始顺序，去重，IPv6格式化）
+      - name: 抓取并处理 IP / 域名（IPv4 / IPv6 自动端口）
         run: |
           set -e
+
           echo "🧹 初始化缓存..."
           > all_raw.txt
 
           urls=(
             "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
-            "https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt"
-           // "https://addressesapi.090227.xyz/CloudFlareYes"
-           // "https://addressesapi.090227.xyz/ip.164746.xyz"
-            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt"
-           // "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt"
+            "https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt" 
+            // "https://addressesapi.090227.xyz/CloudFlareYes" 
+            // "https://addressesapi.090227.xyz/ip.164746.xyz" 
+            "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt" 
+            // "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt" 
             "https://addressesapi.090227.xyz/cmcc-ipv6"
           )
 
@@ -39,47 +40,76 @@ jobs:
             fi
           done
 
-          echo "🔄 按 all_raw.txt 顺序处理，去注释、去重，IPv6格式化..."
+          echo "🔄 处理地址：检测 IPv4 / IPv6 端口，无端口补 443..."
 
           declare -A seen
           > bestcfv6.txt
 
-          sed 's/#.*//' all_raw.txt | while IFS= read -r line; do
-            line=$(echo "$line" | sed 's/[[:space:]]*$//')
+          while IFS= read -r line; do
+            # 去注释、去行尾空白
+            line=$(echo "$line" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
             [[ -z "$line" ]] && continue
 
+            # 去重（完整字符串）
             if [[ ${seen["$line"]+exists} ]]; then
               continue
-            else
-              seen["$line"]=1
+            fi
+            seen["$line"]=1
+
+            # ===== IPv6：[xxxx]:port =====
+            if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]:[0-9]+$ ]]; then
+              echo "$line" >> bestcfv6.txt
+              continue
             fi
 
-            ip=$(echo "$line" | sed 's/^\[//;s/\]$//')
-            if [[ "$ip" =~ ^([0-9a-fA-F]{0,4}:){1,7}[0-9a-fA-F]{0,4}$ || "$ip" =~ :: ]]; then
-              echo "[$ip]:443" >> bestcfv6.txt
-            else
-              echo "$line" >> bestcfv6.txt
+            # ===== IPv6：[xxxx]（无端口）=====
+            if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
+              echo "$line:443" >> bestcfv6.txt
+              continue
             fi
-          done
+
+            # ===== IPv4：x.x.x.x:port =====
+            if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
+              echo "$line" >> bestcfv6.txt
+              continue
+            fi
+
+            # ===== IPv4：x.x.x.x（无端口）=====
+            if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+              echo "$line:443" >> bestcfv6.txt
+              continue
+            fi
+
+            # ===== IPv6：裸地址（无 []，视为无端口）=====
+            if [[ "$line" =~ : ]]; then
+              echo "[$line]:443" >> bestcfv6.txt
+              continue
+            fi
+
+            # ===== 其他（域名等，原样保留）=====
+            echo "$line" >> bestcfv6.txt
+
+          done < all_raw.txt
 
           echo "✅ 共生成 $(wc -l < bestcfv6.txt) 条记录"
 
       - name: 提交变更
         env:
-          TOKEN: ${{ secrets.PAT_TOKEN }}  # 在仓库 Secrets 中添加此 Token
+          TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
+
           git add bestcfv6.txt all_raw.txt
-          git commit -m "自动更新 bestcfv6.txt ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
+          git commit -m "自动更新 IP 列表 ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
           git push
 
   cleanup_runs:
     runs-on: ubuntu-latest
     needs: update
     steps:
-      - name: 清理旧工作记录，保留最近10次
+      - name: 清理旧工作记录，保留最近 10 次
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
