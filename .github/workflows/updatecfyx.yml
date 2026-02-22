@@ -1,31 +1,27 @@
-name: Routine Data Sync
+name: 每3小时更新 IP 地址列表
 
 on:
   schedule:
-    # 每 6 小时 + 随机分钟（不像刷任务）
-    - cron: '17 */6 * * *'
+    - cron: '0 */3 * * *'   # 每 3 小时（UTC）
   workflow_dispatch:
 
 jobs:
-  sync:
+  update:
     runs-on: ubuntu-latest
 
     steps:
-      # 拉仓库
-      - name: Checkout
+      - name: 检出仓库
         uses: actions/checkout@v4
 
-      # 同步数据
-      - name: Sync resources
+      - name: 抓取并处理 IP / 域名（IPv4 / IPv6 / 域名自动识别）
         run: |
           set -e
 
-          echo "[*] Init cache..."
-          > cache.tmp
+          echo "初始化缓存..."
+          > all_raw.txt
 
-          # 混合真实源 + 掩护源
           urls=(
-            "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
+            //"https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
             "https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt" 
             // "https://addressesapi.090227.xyz/CloudFlareYes" 
             // "https://addressesapi.090227.xyz/ip.164746.xyz" 
@@ -34,113 +30,95 @@ jobs:
             "https://addressesapi.090227.xyz/cmcc-ipv6"
           )
 
-          for u in "${urls[@]}"; do
-            echo "[+] Fetch: $u"
-            curl -fs "$u" >> cache.tmp || true
-            echo >> cache.tmp
+          for url in "${urls[@]}"; do
+            echo "抓取：$url"
+            echo "# 来源: $url" >> all_raw.txt
+            if curl -fs "$url" >> all_raw.txt; then
+              echo >> all_raw.txt
+            else
+              echo "获取失败: $url"
+            fi
           done
 
-          echo "[*] Process records..."
-
+          echo "处理地址规则..."
           declare -A seen
-          > records.dat
+          > bestcfv6.txt
 
           while IFS= read -r line; do
-
-            # 去注释 / 空格
             line=$(echo "$line" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
             [[ -z "$line" ]] && continue
 
-            # 去重
-            [[ ${seen["$line"]+x} ]] && continue
+            if [[ ${seen["$line"]+exists} ]]; then
+              continue
+            fi
             seen["$line"]=1
 
-            # 域名:端口
+            # ===== 1️⃣ 域名 + 端口 =====
             if [[ "$line" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[0-9]+$ ]]; then
-              echo "$line" >> records.dat
+              echo "$line" >> bestcfv6.txt
               continue
             fi
 
-            # 域名
+            # ===== 2️⃣ 域名（无端口）=====
             if [[ "$line" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-              echo "$line" >> records.dat
+              echo "$line" >> bestcfv6.txt
               continue
             fi
 
-            # [IPv6]:port
+            # ===== 3️⃣ IPv6：[xxxx]:port =====
             if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]:[0-9]+$ ]]; then
-              echo "$line" >> records.dat
+              echo "$line" >> bestcfv6.txt
               continue
             fi
 
-            # [IPv6]
+            # ===== 4️⃣ IPv6：[xxxx]（无端口）=====
             if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
-              echo "$line:443" >> records.dat
+              echo "$line:443" >> bestcfv6.txt
               continue
             fi
 
-            # IPv4:port
+            # ===== 5️⃣ IPv4：x.x.x.x:port =====
             if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
-              echo "$line" >> records.dat
+              echo "$line" >> bestcfv6.txt
               continue
             fi
 
-            # IPv4
+            # ===== 6️⃣ IPv4：x.x.x.x（无端口）=====
             if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-              echo "$line:443" >> records.dat
+              echo "$line:443" >> bestcfv6.txt
               continue
             fi
 
-            # 裸 IPv6
+            # ===== 7️⃣ IPv6 裸地址（无 []）=====
             if [[ "$line" =~ : ]]; then
-              echo "[$line]:443" >> records.dat
+              echo "[$line]:443" >> bestcfv6.txt
               continue
             fi
 
-            # 兜底
-            echo "$line" >> records.dat
+            # ===== 8️⃣ 兜底 =====
+            echo "$line" >> bestcfv6.txt
 
-          done < cache.tmp
+          done < all_raw.txt
 
-          # 心跳文件（防行为特征）
-          echo "$(date +%s)" > .heartbeat
+          echo "生成完成：$(wc -l < bestcfv6.txt) 条"
 
-          # 偶尔打乱长度
-          shuf -n 500 records.dat > .tmp && mv .tmp records.dat || true
-
-          echo "[*] Done: $(wc -l < records.dat) lines"
-
-      # 提交
-      - name: Commit changes
+      - name: 提交变更
         env:
           TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git config user.name "sync-bot"
-          git config user.email "sync@local"
-
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${TOKEN}@github.com/${{ github.repository }}
 
-          msg_list=(
-            "sync data"
-            "routine update"
-            "minor patch"
-            "system maintenance"
-            "auto refresh"
-            "scheduled sync"
-          )
-
-          msg=${msg_list[$RANDOM % ${#msg_list[@]}]}
-
-          git add .
-          git commit -m "$msg ($(date +%Y%m%d%H%M))" || exit 0
+          git add bestcfv6.txt all_raw.txt
+          git commit -m "up zyyx ($(date -u '+%Y-%m-%d %H:%M:%S'))" || echo "无变更"
           git push
 
-  cleanup:
+  cleanup_runs:
     runs-on: ubuntu-latest
-    needs: sync
-
+    needs: update
     steps:
-      - name: Cleanup old runs
+      - name: 清理旧工作记录，保留最近 10 次
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
