@@ -21,8 +21,7 @@
 2a06:98c1:310d:3af5:06f9:ff7c:397f:ef1f
 2a06:98c1:310b:6277:dc97:ccff:770b:7f29
 
-
-
+//gf
 cdn.jsdelivr.net
 pages.cloudflare.com
 workers.cloudflare.com
@@ -33,6 +32,18 @@ cloudflare-dns.com
 static.cloudflareinsights.com
 2606:4700::00
 
+//gf
+cdn.jsdelivr.net
+pages.cloudflare.com
+workers.cloudflare.com
+radar.cloudflare.com
+cloudflareaccess.com
+update.argotunnel.com
+cloudflare-dns.com
+static.cloudflareinsights.com
+2606:4700::00
+
+//zrf
 zrf.cf.090227.xyz
 bestcf.030101.xyz
 cf.877774.xyz
@@ -66,6 +77,7 @@ saas.sin.fan
 xn--b6gac.eu.org
 777.ai7777777.xyz
 
+//ygkkk
 www.boba88slot.com
 www.hugedomains.com
 iplocation.io
@@ -112,37 +124,61 @@ www.ipget.net
 www.gov.ua
 log.bpminecraft.com
 
+//sj
+859ct.cc
+278vd.cc
+hk.pyip.xx.kg
+openai.com
+ali.nonull.pp.ua
+cdn.204910.best
+hj.xmm1993.top
+node.hubp.de
+orange.seeck.cn
+cf.090227.xyz
+cf.130519.xyz
+cf.008500.xyz
+img.yust.eu.org
+xin.usfox.qzz.io
+cdn.262832.xyz
+cf.tencentapp.cn
+cloudflare.cfgo.cc
+sub.danfeng.eu.org
+cfsaas.080112.xyz
+www.nexusmods.com
+cf.zhetengsha.eu.org
+cf-cname.xingpingcn.top
+cfyx.aliyun.20237737.xyz
 
 # 来源: https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt
 # 来源: //
 # 来源: https://addressesapi.090227.xyz/CloudFlareYes
-141.101.121.51#CM-LAX
-172.64.95.70#CM-LAX
-172.64.80.249#CM-LAX
-198.41.223.103#CM-LAX
-162.159.252.102#CM-LAX
-141.101.121.51#CU-LAX
-172.64.95.70#CU-LAX
-172.64.80.249#CU-LAX
-198.41.223.103#CU-LAX
-162.159.252.102#CU-LAX
-104.25.52.138#CT-FRA
-104.21.87.213#CT-AMS
-104.27.56.246#CT-FRA
-104.16.31.210#CT-SJC
-104.17.185.72#CT-SJC
+198.41.223.81#CM-LAX
+172.64.91.248#CM-HKG
+162.159.235.236#CM-LAX
+198.41.214.105#CM-LAX
+198.41.209.210#CM-LAX
+198.41.223.81#CU-LAX
+172.64.91.248#CU-HKG
+162.159.235.236#CU-LAX
+198.41.214.105#CU-LAX
+198.41.209.210#CU-LAX
+104.17.131.248#CT-SJC
+104.17.235.150#CT-SJC
+104.18.27.244#CT-LAX
+104.16.70.242#CT-SJC
+104.17.213.228#CT-SJC
 # 来源: //
 # 来源: https://addressesapi.090227.xyz/ip.164746.xyz
-108.162.198.85#CF-71.86MB/s
-162.159.44.112#CF-71.01MB/s
-162.159.38.210#CF-70.78MB/s
-172.64.53.196#CF-70.66MB/s
-172.64.229.224#CF-69.28MB/s
-162.159.45.114#CF-69.11MB/s
-162.159.39.51#CF-69.10MB/s
-172.64.52.29#CF-68.18MB/s
-162.159.60.219#CF-64.93MB/s
-172.64.49.0#CF-50.47MB/s
+162.159.44.188#CF-71.06MB/s
+172.64.52.112#CF-70.81MB/s
+162.159.38.38#CF-70.70MB/s
+162.159.39.207#CF-68.30MB/s
+172.64.53.88#CF-67.76MB/s
+162.159.45.135#CF-62.85MB/s
+162.159.34.247#CF-56.33MB/s
+172.64.48.138#CF-52.34MB/s
+172.64.40.101#CF-52.27MB/s
+162.159.56.237#CF-0.00MB/s
 # 来源: https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt
 2606:4700:0:dd:df95:6eb1:ffa4:6779
 2606:4700:0:d9:2acf:b5e0:5a46:4358
@@ -157,21 +193,21 @@ log.bpminecraft.com
 
 # 来源: //
 # 来源: https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt
-104.19.158.45
-104.17.112.31
-172.64.158.243
-104.19.55.238
-104.17.149.162
-104.19.32.127
-104.16.151.212
-104.17.144.108
-104.17.104.253
-104.19.146.233
+104.16.155.153
+104.19.32.20
+104.19.144.147
+104.19.33.94
+104.17.20.211
+104.19.146.6
+104.19.35.152
+104.19.34.34
+104.17.108.175
+104.19.147.40
 
 # 来源: https://addressesapi.090227.xyz/cmcc-ipv6
-[2606:4700:3036:0:a36a:4af2:65e7:a0d6]#CMCC-IPV6
-[2606:4700:3036:6ed4:260:e367:c3d4:d3bb]#CMCC-IPV6
 [2606:4700:3036:0:a36a:4aa4:75d9:9f75]#CMCC-IPV6
-[2606:4700:3036:6ed4:260:e3e9:a48c:8437]#CMCC-IPV6
-[2606:4700:3036:6ed4:ffdf:15bf:7d77:5f52]#CMCC-IPV6
-[2606:4700:3036:6ed4:e1ed:36:7204:2031]#CMCC-IPV6
+[2606:4700:3036:6ed4:e1ed:ae00:3c36:e683]#CMCC-IPV6
+[2606:4700:3036:ef:95e:7a29:2ccc:d331]#CMCC-IPV6
+[2606:4700:3036:ef:3f32:9601:b705:e94b]#CMCC-IPV6
+[2606:4700:3036:6ed4:260:e367:c3d4:d3bb]#CMCC-IPV6
+[2606:4700:3036:6ed4:e1ed:36:8916:dace]#CMCC-IPV6
