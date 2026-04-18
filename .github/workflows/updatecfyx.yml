@@ -23,10 +23,10 @@ jobs:
           urls=(
             "https://raw.githubusercontent.com/woshishiq1/cfyx/refs/heads/main/ip.txt"
             "https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt" 
-            // "https://addressesapi.090227.xyz/CloudFlareYes" 
-            // "https://addressesapi.090227.xyz/ip.164746.xyz" 
+            # "https://addressesapi.090227.xyz/CloudFlareYes" 
+            # "https://addressesapi.090227.xyz/ip.164746.xyz" 
             "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt" 
-            // "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt" 
+            # "https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv4.txt" 
             "https://addressesapi.090227.xyz/cmcc-ipv6"
           )
 
@@ -45,58 +45,64 @@ jobs:
           > zy.txt
 
           while IFS= read -r line; do
-            line=$(echo "$line" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
-            [[ -z "$line" ]] && continue
+            # 提取注释部分 (如果有)
+            comment=$(echo "$line" | grep -o '#.*' || echo "")
+            # 提取用于逻辑判断的纯净地址 (对应你原来的处理逻辑)
+            addr=$(echo "$line" | sed 's/#.*//' | sed 's/[[:space:]]*$//')
+            
+            # 原始逻辑：空行跳过
+            [[ -z "$addr" ]] && continue
 
-            if [[ ${seen["$line"]+exists} ]]; then
+            # 原始逻辑：去重判断
+            if [[ ${seen["$addr"]+exists} ]]; then
               continue
             fi
-            seen["$line"]=1
+            seen["$addr"]=1
 
             # ===== 1️⃣ 域名 + 端口 =====
-            if [[ "$line" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[0-9]+$ ]]; then
-              echo "$line" >> zy.txt
+            if [[ "$addr" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[0-9]+$ ]]; then
+              echo "$addr$comment" >> zy.txt
               continue
             fi
 
             # ===== 2️⃣ 域名（无端口）=====
-            if [[ "$line" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
-              echo "$line" >> zy.txt
+            if [[ "$addr" =~ ^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+              echo "$addr$comment" >> zy.txt
               continue
             fi
 
             # ===== 3️⃣ IPv6：[xxxx]:port =====
-            if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]:[0-9]+$ ]]; then
-              echo "$line" >> zy.txt
+            if [[ "$addr" =~ ^\[[0-9a-fA-F:]+\]:[0-9]+$ ]]; then
+              echo "$addr$comment" >> zy.txt
               continue
             fi
 
             # ===== 4️⃣ IPv6：[xxxx]（无端口）=====
-            if [[ "$line" =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
-              echo "$line:443" >> zy.txt
+            if [[ "$addr" =~ ^\[[0-9a-fA-F:]+\]$ ]]; then
+              echo "$addr:443$comment" >> zy.txt
               continue
             fi
 
             # ===== 5️⃣ IPv4：x.x.x.x:port =====
-            if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
-              echo "$line" >> zy.txt
+            if [[ "$addr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$ ]]; then
+              echo "$addr$comment" >> zy.txt
               continue
             fi
 
             # ===== 6️⃣ IPv4：x.x.x.x（无端口）=====
-            if [[ "$line" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-              echo "$line:443" >> zy.txt
+            if [[ "$addr" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+              echo "$addr:443$comment" >> zy.txt
               continue
             fi
 
             # ===== 7️⃣ IPv6 裸地址（无 []）=====
-            if [[ "$line" =~ : ]]; then
-              echo "[$line]:443" >> zy.txt
+            if [[ "$addr" =~ : ]]; then
+              echo "[$addr]:443$comment" >> zy.txt
               continue
             fi
 
             # ===== 8️⃣ 兜底 =====
-            echo "$line" >> zy.txt
+            echo "$addr$comment" >> zy.txt
 
           done < all_raw.txt
 
