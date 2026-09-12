@@ -58,21 +58,21 @@ xn--b6gac.eu.org
 
 # 来源: https://raw.githubusercontent.com/woshishiq1/Senflare-IP/refs/heads/main/Senflare-Pro.txt
 # 来源: https://raw.githubusercontent.com/ymyuuu/IPDB/refs/heads/main/BestCF/bestcfv6.txt
-2606:4700:0:c00c:8043:50bc:4eec:bfc8
-2606:4700:0:c00c:8043:fdbc:a48f:b254
-2606:4700:0:a3:74bc:c266:8cd4:4ecf
-2606:4700:0:c093:58b:fd3b:1cfb:4f6
-2606:4700::3b98:aa24:30e7:c31f
-2606:4700::fc:429a:3bed:817d
-2606:4700:0:c00c:d00:ba71:8996:2840
-2606:4700::3bd0:2f80:c043:13d3
-2606:4700::3bd0:11eb:a281:6b89
-2606:4700:0:c00c:d89:afbd:7f95:b20b
+2606:4700::7d47:a383:ecd4:d9fb
+2606:4700::f881:9612:7b5f:2e30
+2606:4700:0:f7:135e:e814:5fc3:7ab
+2606:4700::94:d3ad:4a95:d2fd
+2606:4700::f881:96d2:eaaa:b32e
+2606:4700:0:f7:135e:118:9605:a2ec
+2606:4700::94:d3ad:e76f:eafc
+2606:4700::7d47:a325:fab0:598b
+2606:4700::7d47:b467:7cdf:fd24
+2606:4700::94:fb6c:5f9b:96fd
 
 # 来源: https://addressesapi.090227.xyz/cmcc-ipv6
-[2606:4700:3036:0:a36a:4a23:4a60:9f3f]#CMCC-IPV6
-[2606:4700:3036:0:a36a:4a94:8d40:c92c]#CMCC-IPV6
-[2606:4700:3036:0:a36a:4aa4:75d9:9f75]#CMCC-IPV6
 [2606:4700:3036:6ed4:ff6e:712c:4953:87a5]#CMCC-IPV6
+[2606:4700:3036:0:a36a:4af2:65e7:a0d6]#CMCC-IPV6
+[2606:4700:3036:ef:3f32:a9c6:39c4:9ae3]#CMCC-IPV6
+[2606:4700:3036:0:a36a:4a94:8d40:c92c]#CMCC-IPV6
 [2606:4700:3036:ef:95e:7a29:2ccc:d331]#CMCC-IPV6
-[2606:4700:3036:ef:92f:be51:8695:9fc5]#CMCC-IPV6
+[2606:4700:3036:ef:db9e:eecc:caef:9d4a]#CMCC-IPV6
